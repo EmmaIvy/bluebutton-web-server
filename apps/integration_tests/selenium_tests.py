@@ -1,6 +1,8 @@
 import os
 import time
+
 from django.test import TestCase
+from inspect import isfunction
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -20,6 +22,7 @@ from .selenium_cases import (
     SEQ_LOGIN_MSLSX,
     SEQ_LOGIN_SLSX,
     TESTS,
+    update_credentials,
 )
 
 
@@ -102,6 +105,7 @@ class SeleniumTests(TestCase):
         return elem
 
     def _load_page(self, url, **kwargs):
+        print("url={}".format(url))
         self.driver.get(url)
 
     def _check_page_title(self, timeout_sec, by, by_expr, fmt, resource_type, **kwargs):
@@ -145,11 +149,23 @@ class SeleniumTests(TestCase):
                 action = s.get('action', None)
                 step[0] = step[0] + 1
                 if action is not None:
-                    print("{}:{}:".format(step[0], s.get("display", "Not available")))
+                    step_display = "{}:{}:".format(step[0], s.get("display", "Not available"))
+                    params = s.get("params", [])
+                    if action == Action.FIND_SEND_KEY:
+                        # expect 4 parameters with 3rd and 4th as field name and field value
+                        # OR when p3 is a function (fetch_credentials()), user and password are derived
+                        # by: p3()[p4]
+                        fld_name = params[2]
+                        fld_value = params[3]
+                        if isfunction(fld_value):
+                            fld_value = fld_value()[params[4]]
+                            params = [params[0], params[1], fld_name, fld_value]
+                        step_display = "{}:{}:{}:{}".format(step[0], s.get("display", "Not available"), fld_name, fld_value)
+                    print(step_display)
                     if action == Action.LOGIN:
-                        self.actions[action](*s.get("params", []), step, **kwargs)
+                        self.actions[action](*params, step, **kwargs)
                     else:
-                        self.actions[action](*s.get("params", []), **kwargs)
+                        self.actions[action](*params, **kwargs)
                 else:
                     raise ValueError("Invalid test case, expect dict with action...")
 
@@ -204,3 +220,16 @@ class SeleniumTests(TestCase):
         self._play(TESTS[test_name], step, api_ver=api_ver)
         self._testclient_home()
         self._print_testcase_banner(test_name, api_ver, step[0], self.use_mslsx, False)
+
+
+class LoadTests(SeleniumTests):
+    '''
+    load tests: iterate through a sequence of bene's through testclient
+    '''
+    def test_load_selenium(self):
+        global SLSX_TXT_FLD_PASSWORD_VAL, SLSX_TXT_FLD_USERNAME_VAL
+        for n in range(0, 9):
+            d5 = format(n, '05d')
+            update_credentials("BBUser{}".format(d5), "PW{}!".format(d5))
+            self.test_auth_grant_fhir_calls_v1()
+            self.test_auth_grant_fhir_calls_v2()

@@ -54,7 +54,7 @@ if [ $# -eq 0 ]
 then
     echo "Use MSLSX for identity service."
 else
-    if [[ $1 != "slsx" && $1 != "mslsx" ]]
+    if [[ $1 != "slsx" && $1 != "mslsx" && $1 != "load" ]]
     then
         echo
         echo "COMMAND USAGE HELP"
@@ -64,14 +64,23 @@ else
         echo
         echo "    slsx  = use SLSX for identity service."
         echo
+        echo "    load  = use SLSX for identity service, and test with a sequence of synthetic beneficiaries."
+        echo
         echo "    mslsx (default) = use MSLSX for identity service."
         echo
         exit 1
     else
-        if [ $1 == "slsx" ]
+        if [[ $1 == "slsx" || $1 == "load" ]]
         then
             export USE_MSLSX=false
-            export DJANGO_MEDICARE_SLSX_REDIRECT_URI="http://bb2slsx:8000/mymedicare/sls-callback"
+            if [[ $1 == "load" ]]
+            then
+                export HOSTNAME_URL="https://test.bluebutton.cms.gov/"
+                export DJANGO_MEDICARE_SLSX_REDIRECT_URI="https://test.bluebutton.cms.gov/mymedicare/sls-callback"
+                TESTS_LIST="apps.integration_tests.selenium_tests.LoadTests.test_load_selenium"
+            else
+                export DJANGO_MEDICARE_SLSX_REDIRECT_URI="http://bb2slsx:8000/mymedicare/sls-callback"
+            fi
             export DJANGO_MEDICARE_SLSX_LOGIN_URI="https://test.medicare.gov/sso/authorize?client_id=bb2api"
             export DJANGO_SLSX_HEALTH_CHECK_ENDPOINT="https://test.accounts.cms.gov/health"
             export DJANGO_SLSX_TOKEN_ENDPOINT="https://test.medicare.gov/sso/session"

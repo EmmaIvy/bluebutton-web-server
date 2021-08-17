@@ -3,6 +3,17 @@ from enum import Enum
 from selenium.webdriver.common.by import By
 
 
+def update_credentials(u, p):
+    global SLSX_TXT_FLD_USERNAME_VAL, SLSX_TXT_FLD_PASSWORD_VAL
+    SLSX_TXT_FLD_USERNAME_VAL = u
+    SLSX_TXT_FLD_PASSWORD_VAL = p
+
+
+def fetch_credentials():
+    global SLSX_TXT_FLD_USERNAME_VAL, SLSX_TXT_FLD_PASSWORD_VAL
+    return (SLSX_TXT_FLD_USERNAME_VAL, SLSX_TXT_FLD_PASSWORD_VAL)
+
+
 class Action(Enum):
     LOAD_PAGE = 1
     FIND_CLICK = 2
@@ -139,12 +150,12 @@ SEQ_LOGIN_SLSX = [
     {
         "display": "MyMedicare login username",
         "action": Action.FIND_SEND_KEY,
-        "params": [20, By.ID, SLSX_TXT_FLD_USERNAME, SLSX_TXT_FLD_USERNAME_VAL]
+        "params": [20, By.ID, SLSX_TXT_FLD_USERNAME, fetch_credentials, 0]
     },
     {
         "display": "MyMedicare login password",
         "action": Action.FIND_SEND_KEY,
-        "params": [20, By.ID, SLSX_TXT_FLD_PASSWORD, SLSX_TXT_FLD_PASSWORD_VAL]
+        "params": [20, By.ID, SLSX_TXT_FLD_PASSWORD, fetch_credentials, 1]
     },
     {
         "display": "Click 'submit' on SLSX login form",
