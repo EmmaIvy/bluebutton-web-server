@@ -42,9 +42,11 @@ class InterimProdAccessView(LoginRequiredMixin, TemplateView):
             ],
             context=context,
         )
+        print(full_context)
         full_txt_content = get_template("interim_prod_access_email.txt").render(
             full_context
         )
+        print(full_txt_content)
         mailer.attach("interim-prod-access.txt", full_txt_content)
         mailer.send()
 
@@ -83,7 +85,7 @@ class InterimProdAccessView(LoginRequiredMixin, TemplateView):
                     self.send_mail(
                         {"form_data": form_data_diff},
                         form.cleaned_data["application_name"],
-                        full_context=context["form_model"].form_data,
+                        full_context={"form_data": context["form_model"].form_data},
                     )
                     self.update_context_display(context, form.cleaned_data)
 
