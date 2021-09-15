@@ -1,4 +1,5 @@
 from libs.mail import Mailer
+from django.template.loader import get_template
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.base import TemplateView
 from apps.forms.models import (
@@ -28,7 +29,10 @@ class InterimProdAccessView(LoginRequiredMixin, TemplateView):
 
         return form_differences
 
-    def send_mail(self, context, app_name="Unknown"):
+    def send_mail(self, context, app_name="Unknown", full_context=None):
+        if full_context is None:
+            full_context = context
+
         mailer = Mailer(
             subject="Interim Prod Access: " + app_name,
             template_text="interim_prod_access_email.txt",
@@ -38,6 +42,10 @@ class InterimProdAccessView(LoginRequiredMixin, TemplateView):
             ],
             context=context,
         )
+        full_txt_content = get_template("interim_prod_access_email.txt").render(
+            full_context
+        )
+        mailer.attach("interim-prod-access.txt", full_txt_content)
         mailer.send()
 
     def get(self, request, *args, **kwargs):
@@ -75,6 +83,7 @@ class InterimProdAccessView(LoginRequiredMixin, TemplateView):
                     self.send_mail(
                         {"form_data": form_data_diff},
                         form.cleaned_data["application_name"],
+                        full_context=context["form_model"].form_data,
                     )
                     self.update_context_display(context, form.cleaned_data)
 
